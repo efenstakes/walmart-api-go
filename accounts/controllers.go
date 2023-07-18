@@ -2,7 +2,7 @@ package accounts
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -14,31 +14,30 @@ import (
 
 	"github.com/kamva/mgm/v3"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var jwtSigningKey = []byte(os.Getenv("JWT_SIGNING_KEY"))
 
 type JWTCustomClaims struct {
-	Account string `json:"account"`
+	// NOTE: ID would coincide with ("jti" (JWT ID) Claim) which exists in jwt claims already
+	AccountID string `json:"account_id"`
+	Type      string `json:"type"`
 	jwt.RegisteredClaims
 }
 
 func generateJwt(account *Account) (string, error) {
-	account.Password = ""
-	accountJson, err := json.Marshal(account)
-	if err != nil {
-		return "", err
-	}
 
 	// Create claims while leaving out some of the optional fields
 	jwtClaims := JWTCustomClaims{
-		string(accountJson),
-		jwt.RegisteredClaims{
+		AccountID: account.ID.Hex(),
+		Type:      string(account.Type),
+		RegisteredClaims: jwt.RegisteredClaims{
 			// Also fixed dates can be used for the NumericDate
 			// ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 30)),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 30)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    "Messenger",
+			Issuer:    "Walmart",
 		},
 	}
 
@@ -56,7 +55,7 @@ func generateJwt(account *Account) (string, error) {
 }
 
 func Create(c *fiber.Ctx) error {
-	account := new(Account)
+	account := New()
 
 	if err := c.BodyParser(account); err != nil {
 		return fiber.NewError(http.StatusBadRequest, err.Error())
@@ -83,7 +82,7 @@ func Create(c *fiber.Ctx) error {
 
 	// set cookie too
 	c.Cookie(&fiber.Cookie{
-		Name:     "MessengerToken",
+		Name:     "WalmartToken",
 		Value:    tokenString,
 		Expires:  time.Now().Add(24 * time.Hour * 30),
 		HTTPOnly: false, // for testing purposes
@@ -123,7 +122,7 @@ func Login(c *fiber.Ctx) error {
 
 	// set cookie too
 	c.Cookie(&fiber.Cookie{
-		Name:     "MessengerToken",
+		Name:     "WalmartToken",
 		Value:    string(tokenString),
 		Expires:  time.Now().Add(24 * time.Hour * 30),
 		HTTPOnly: false, // for testing purposes
@@ -139,7 +138,7 @@ func Get(c *fiber.Ctx) error {
 	account := new(Account)
 
 	if err := mgm.Coll(account).FindByID(id, account); err != nil {
-		if err := mgm.Coll(account).FindOne(context.TODO(), bson.M{"slug": id}); err != nil {
+		if err := mgm.Coll(account).FindOne(context.TODO(), bson.M{"id": id}); err != nil {
 			return fiber.NewError(http.StatusNotFound, "Not Found")
 		}
 	}
@@ -166,4 +165,44 @@ func AccountExists(slug string) bool {
 	}
 
 	return count > 0
+}
+
+func DecodeJwt(tokenString string) (*Account, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// Don't forget to validate the alg is what you expect:
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+
+		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
+		return jwtSigningKey, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		fmt.Println("INFO :: claims")
+		fmt.Println(claims)
+		fmt.Println(claims["account_id"])
+		fmt.Println(claims["type"])
+
+		accountID, err := primitive.ObjectIDFromHex(claims["account_id"].(string))
+
+		if err != nil {
+			fmt.Println("Error creating object id")
+			fmt.Println(err)
+			return nil, err
+		}
+
+		account := new(Account)
+		account.ID = accountID
+		account.Type = claims["type"].(string)
+
+		return account, nil
+	} else {
+		fmt.Println("ERROR :: could not get claims")
+		return new(Account), errors.New("Error Getting Claims")
+	}
 }
