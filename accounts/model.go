@@ -1,6 +1,10 @@
 package accounts
 
-import "github.com/kamva/mgm/v3"
+import (
+	"time"
+
+	"github.com/kamva/mgm/v3"
+)
 
 type Account struct {
 	mgm.DefaultModel `bson:",inline"`
@@ -9,5 +13,18 @@ type Account struct {
 	Name     string `json:"name"`
 	Password string `json:"password"`
 	Email    string `json:"email"`
-	JoinedOn string `json:"joinedOn" bson:"created_at"`
+
+	// REGULAR || ADMIN
+	Type string `json:"type"`
+
+	JoinedOn time.Time `json:"joinedOn" bson:"joinedOn"`
+}
+
+func New() *Account {
+	account := new(Account)
+
+	account.Type = "ADMIN"
+	account.JoinedOn = time.Now()
+
+	return account
 }
