@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/efenstakes/walmart-api-g/accounts"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -36,6 +37,23 @@ func main() {
 
 	server.Use(cors.New())
 	server.Use(requestid.New())
+
+	// !!! TODO !!! load user from jwt token
+
+	server.Get("/q", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"app":      "Walmart API",
+			"runnings": true,
+			"account":  c.Locals("account"),
+		})
+	})
+
+	// accounts
+	accountsGroup := server.Group("/api/accounts")
+	accountsGroup.Post("/", accounts.Create)
+	accountsGroup.Post("/login", accounts.Login)
+	accountsGroup.Get("/:id", accounts.Get)
+	accountsGroup.Get("/", accounts.GetAll)
 
 	// get port
 	port := os.Getenv("PORT")
