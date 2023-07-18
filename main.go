@@ -17,14 +17,16 @@ import (
 
 // this is always called before main making it a great place to initialize
 func init() {
+	if err := godotenv.Load(); err != nil {
+		panic("Couldn't load variables from environment")
+	}
 	err := mgm.SetDefaultConfig(
-		nil, "messenger", options.Client().ApplyURI("mongodb://localhost:27017/?readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false"),
+		nil, "walmart", options.Client().ApplyURI(os.Getenv("DB_URI")),
 	)
 	if err != nil {
 		panic("Could not connect to MongoDB")
-	}
-	if err := godotenv.Load(); err != nil {
-		panic("Couldn't load variables from environment")
+	} else {
+		fmt.Println("Connected to db")
 	}
 }
 
@@ -38,9 +40,7 @@ func main() {
 	server.Use(cors.New())
 	server.Use(requestid.New())
 
-	// !!! TODO !!! load user from jwt token
-
-	server.Get("/q", func(c *fiber.Ctx) error {
+	server.Get("/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"app":      "Walmart API",
 			"runnings": true,
