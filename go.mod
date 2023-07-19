@@ -3,6 +3,7 @@ module github.com/efenstakes/walmart-api-g
 go 1.20
 
 require (
+	dario.cat/mergo v1.0.0 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
@@ -33,5 +34,5 @@ require (
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect
 	golang.org/x/sys v0.10.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
