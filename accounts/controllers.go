@@ -183,10 +183,10 @@ func DecodeJwt(tokenString string) (*Account, error) {
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok {
-		fmt.Println("INFO :: claims")
-		fmt.Println(claims)
-		fmt.Println(claims["account_id"])
-		fmt.Println(claims["type"])
+		// fmt.Println("INFO :: claims")
+		// fmt.Println(claims)
+		// fmt.Println(claims["account_id"])
+		// fmt.Println(claims["type"])
 
 		accountID, err := primitive.ObjectIDFromHex(claims["account_id"].(string))
 
