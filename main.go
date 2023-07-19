@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/efenstakes/walmart-api-g/accounts"
+	"github.com/efenstakes/walmart-api-g/products"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -74,6 +75,14 @@ func main() {
 	accountsGroup.Post("/login", accounts.Login)
 	accountsGroup.Get("/:id", accounts.Get)
 	accountsGroup.Get("/", accounts.GetAll)
+
+	// products
+	productsGroup := server.Group("/api/products")
+	productsGroup.Post("/", products.Create)
+	productsGroup.Get("/:id", products.Get)
+	productsGroup.Put("/:id", products.Update)
+	productsGroup.Put("/discount/:id/set", products.SetDiscount)
+	productsGroup.Get("/", products.GetAll)
 
 	// get port
 	port := os.Getenv("PORT")
