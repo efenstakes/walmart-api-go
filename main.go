@@ -40,6 +40,26 @@ func main() {
 	server.Use(cors.New())
 	server.Use(requestid.New())
 
+	// load user from jwt token
+	server.Use(func(c *fiber.Ctx) error {
+		cookie := c.Cookies("WalmartToken")
+		fmt.Println("Cookie: ", cookie)
+		if cookie != "" {
+			// accounts.DecodeJwt(cookie)
+			account, err := accounts.DecodeJwt(cookie)
+			if err != nil {
+				fmt.Println("Cookie Account Error ", err)
+				c.Locals("account", nil)
+			} else {
+				// fmt.Println("Cookie Account in use is ", account.ID)
+				c.Locals("account", account)
+			}
+		} else {
+			c.Locals("account", nil)
+		}
+		return c.Next()
+	})
+
 	server.Get("/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"app":      "Walmart API",
