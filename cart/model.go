@@ -11,6 +11,7 @@ type Cart struct {
 
 	UserId    string    `bson:"userId" json:"userId"`
 	Price     float64   `bson:"price" json:"price"`
+	Quantity  int       `bson:"quantity" json:"quantity"`
 	ProductID string    `bson:"productId" json:"productId"`
 	SavedOn   time.Time `bson:"savedOn" json:"savedOn"`
 }
