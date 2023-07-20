@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/efenstakes/walmart-api-g/accounts"
+	"github.com/efenstakes/walmart-api-g/cart"
 	"github.com/efenstakes/walmart-api-g/orders"
 	"github.com/efenstakes/walmart-api-g/products"
 	"github.com/gofiber/fiber/v2"
@@ -45,7 +46,7 @@ func main() {
 	// load user from jwt token
 	server.Use(func(c *fiber.Ctx) error {
 		cookie := c.Cookies("WalmartToken")
-		fmt.Println("Cookie: ", cookie)
+		// fmt.Println("Cookie: ", cookie)
 		if cookie != "" {
 			// accounts.DecodeJwt(cookie)
 			account, err := accounts.DecodeJwt(cookie)
@@ -89,6 +90,12 @@ func main() {
 	ordersGroup := server.Group("/api/orders")
 	ordersGroup.Post("/", orders.MakeOrder)
 	ordersGroup.Get("/", orders.GetAll)
+
+	// cart
+	cartGroup := server.Group("/api/cart")
+	cartGroup.Post("/", cart.Add)
+	cartGroup.Get("/", cart.GetAll)
+	cartGroup.Delete("/:id", cart.Delete)
 
 	// get port
 	port := os.Getenv("PORT")
