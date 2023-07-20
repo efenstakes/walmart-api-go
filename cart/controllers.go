@@ -31,20 +31,56 @@ func Add(c *fiber.Ctx) error {
 		return fiber.NewError(http.StatusBadRequest, err.Error())
 	}
 	inputCartItem.SavedOn = time.Now()
+	inputCartItem.UserId = account.ID.Hex()
+	inputCartItem.SavedOn = time.Now()
 
 	// check if the product exists
 	product := new(products.Product)
 	err := mgm.Coll(&products.Product{}).FindByID(inputCartItem.ProductID, product)
 	if product.Name == "" || err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Product Not Found"})
 	}
 
-	// fill in data
-	inputCartItem.Price = product.Price
-	inputCartItem.UserId = account.ID.Hex()
-	inputCartItem.SavedOn = time.Now()
+	// check if product has already been added
+	item := new(Cart)
+	filters := map[string]string{}
+	filters["productId"] = inputCartItem.ProductID
+	filters["userId"] = account.ID.Hex()
+
+	error := mgm.Coll(&Cart{}).FindOne(mgm.Ctx(), filters).Decode(item)
+	fmt.Println(item)
+	// add quantity
+	if error != nil {
+		fmt.Println("err.Error()")
+		fmt.Println(error.Error())
+		// just update quantity
+		updates := bson.D{{"$set", bson.D{{"quantity", inputCartItem.Quantity}}}}
+
+		if inputCartItem.ID.Hex() == "" {
+			return c.Status(http.StatusNotFound).JSON(fiber.Map{"message": "No Product Id Found"})
+		}
+
+		// Create a filter to find the product by ID
+		filter := bson.D{{"_id", inputCartItem.ID.Hex()}}
+
+		opts := options.Update().SetUpsert(true)
+		result, err := mgm.Coll(product).UpdateOne(mgm.Ctx(), filter, updates, opts)
+		if err != nil {
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"saved": false})
+		}
+
+		fmt.Println(result.ModifiedCount)
+		fmt.Println(result.UpsertedCount)
+
+		return c.Status(http.StatusCreated).JSON(fiber.Map{"saved": true, "item": inputCartItem})
+	}
+
+	//
+	if item.ProductID != "" {
+		return c.Status(http.StatusOK).JSON(fiber.Map{"saved": false, "message": "Already Saved"})
+	}
 
 	// add it
+	inputCartItem.Price = product.Price
 	if err := mgm.Coll(inputCartItem).Create(inputCartItem); err != nil {
 		return c.Status(400).JSON(fiber.Map{})
 	}
@@ -100,7 +136,7 @@ func GetAll(c *fiber.Ctx) error {
 	return c.JSON(products)
 }
 
-// delete item to cart
+// delete item from cart
 func Delete(c *fiber.Ctx) error {
 	productID := c.Params("id", "")
 
