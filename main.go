@@ -8,6 +8,7 @@ import (
 	"github.com/efenstakes/walmart-api-g/cart"
 	"github.com/efenstakes/walmart-api-g/orders"
 	"github.com/efenstakes/walmart-api-g/products"
+	"github.com/efenstakes/walmart-api-g/rating"
 	savedproducts "github.com/efenstakes/walmart-api-g/saved_products"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -103,6 +104,12 @@ func main() {
 	savedProductsGroup.Post("/", savedproducts.Add)
 	savedProductsGroup.Get("/", savedproducts.GetAll)
 	savedProductsGroup.Delete("/:id", savedproducts.Delete)
+
+	// product ratings
+	productRatingsGroup := server.Group("/api/product/ratings")
+	productRatingsGroup.Post("/", rating.Rate)
+	productRatingsGroup.Get("/:id", rating.GetAll)
+	productRatingsGroup.Delete("/:id", rating.Delete)
 
 	// get port
 	port := os.Getenv("PORT")
