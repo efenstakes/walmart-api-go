@@ -10,12 +10,12 @@ type Account struct {
 	mgm.DefaultModel `bson:",inline"`
 
 	// ID         string   `json:"id" bson:"_id"`
-	Name     string `json:"name"`
-	Password string `json:"password"`
-	Email    string `json:"email"`
+	Name     string `json:"name" validate:"required,min=5,max=20"`
+	Password string `json:"password" validate:"required,min=8,max=20,containsany=!@#?*"`
+	Email    string `json:"email" validate:"required,email"`
 
 	// REGULAR || ADMIN
-	Type string `json:"type"`
+	Type string `json:"type" validate:"required"`
 
 	JoinedOn time.Time `json:"joinedOn" bson:"joinedOn"`
 }
