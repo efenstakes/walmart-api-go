@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	validator "github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/kamva/mgm/v3"
@@ -27,6 +28,28 @@ func Create(c *fiber.Ctx) error {
 
 	if err := c.BodyParser(product); err != nil {
 		return fiber.NewError(http.StatusBadRequest, err.Error())
+	}
+
+	// validate
+	v := validator.New()
+	validationResult := v.Struct(product)
+	fmt.Println("err ", validationResult.Error())
+	validationErr, ok := validationResult.(validator.ValidationErrors)
+
+	if !ok {
+		return fiber.NewError(http.StatusBadRequest, "Error")
+	}
+
+	if len(validationErr) > 0 {
+		fmt.Println(validationErr)
+
+		errors := make(map[string]string)
+		for _, vErr := range validationErr {
+			fmt.Printf("'%s' has a value of '%v' which does not satisfy '%s'.\n", vErr.Field(), vErr.Value(), vErr.Tag())
+			errors[vErr.Field()] = vErr.Tag()
+		}
+
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"errors": errors})
 	}
 
 	if err := mgm.Coll(product).Create(product); err != nil {
