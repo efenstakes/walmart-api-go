@@ -7,6 +7,7 @@ import (
 
 	"github.com/efenstakes/walmart-api-g/accounts"
 	"github.com/efenstakes/walmart-api-g/products"
+	validator "github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/kamva/mgm/v3"
 	"go.mongodb.org/mongo-driver/bson"
@@ -36,6 +37,28 @@ func MakeOrder(c *fiber.Ctx) error {
 
 	if err := c.BodyParser(inputOrder); err != nil {
 		return fiber.NewError(http.StatusBadRequest, err.Error())
+	}
+
+	// validate
+	v := validator.New()
+	validationResult := v.Struct(account)
+	fmt.Println("validationResult ", validationResult.Error())
+	validationErr, ok := validationResult.(validator.ValidationErrors)
+
+	if !ok {
+		return fiber.NewError(http.StatusBadRequest, "Error")
+	}
+
+	if len(validationErr) > 0 {
+		fmt.Println(validationErr)
+
+		errors := make(map[string]string)
+		for _, vErr := range validationErr {
+			fmt.Printf("'%s' has a value of '%v' which does not satisfy '%s'.\n", vErr.Field(), vErr.Value(), vErr.Tag())
+			errors[vErr.Field()] = vErr.Tag()
+		}
+
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"errors": errors})
 	}
 
 	// object ids of the products we are ordering
