@@ -64,7 +64,7 @@ Create a `.env` and set the below values:
 3. `DB_URI` Mongo db instance URI (from docker, local mongo compass or cloud)
 
 
-Run the Go Fiber yoda server with:
+Run the Go Fiber server with:
 ```sh
 go main.go
 ```
@@ -72,8 +72,6 @@ go main.go
 
 Happy building :(.
 
-## Extras
-I build a similar API to this in Golang and Node.js. You can find it here in my github.
 
 
 ## Contact
